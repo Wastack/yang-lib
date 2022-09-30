@@ -1,0 +1,20 @@
+{
+  "name": "yang-lib",
+  "version": "0.1.0",
+  "description": "Yang parser library",
+  "main": "gen/index.js",
+  "types": "gen/index.d.ts",
+  "scripts": {
+    "build": "tsc -p .",
+    "start": "npm run build -- -w",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Tamas Bunth",
+  "license": "ISC",
+  "files": [
+    "/gen"
+  ],
+  "dependencies": {
+    "typescript": "^4.8.4"
+  }
+}
