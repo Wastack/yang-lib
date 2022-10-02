@@ -24,6 +24,7 @@ describe('Yang lexer', () => {
         namespace "http://example.com/example-sports";
         prefix sports;
       
+        // importing another module
         import ietf-yang-types { prefix yang; }
       
         typedef season {
@@ -33,6 +34,9 @@ describe('Yang lexer', () => {
              'Champions League 2014/2015'.";
         }
       
+        /* Container nodes can hold arbitrary
+        number of other yang nodes */
+
         container sports {
           config true;
       
@@ -66,7 +70,5 @@ describe('Yang lexer', () => {
     }
     expect(count).to.eq(120)
   })
-
-
 
 });

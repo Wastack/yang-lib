@@ -137,7 +137,7 @@ export class Lexer {
 
             return new WhiteSpaceToken()
         } else if (current_string.startsWith("//")) {
-            let comment_str = current_string.split("\n", 1)
+            let comment_str = current_string.split("\n", 1)[0]
             this.pos += comment_str.length + 1 // +1 for the new line
             this.col = 0
             this.row++
@@ -150,6 +150,7 @@ export class Lexer {
             }
 
             let block_comment = current_string.slice(0, end_pos + 2)
+            this.pos += block_comment.length
             let lines = block_comment.split("\n")
             this.col = lines[lines.length - 1].length
             this.row += lines.length - 1
