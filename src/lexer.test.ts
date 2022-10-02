@@ -71,4 +71,40 @@ describe('Yang lexer', () => {
     expect(count).to.eq(120)
   })
 
+  it(`parses string before line comment`, () => {
+    let lexer = new Lexer(`text // this is a comment
+    text2
+    `)
+
+    let token = lexer.getToken()
+    expect(token).to.deep.eq(new StringToken("text"))
+
+    token = lexer.getToken()
+    expect(token).to.deep.eq(new StringToken("text2"))
+
+    token = lexer.getToken()
+    expect(token).to.deep.eq(new EndOfInputToken())
+  })
+
+  it(`should parse string after block comment`, () => {
+    let lexer = new Lexer(`/* comment */ text`)
+
+    let token = lexer.getToken()
+    expect(token).to.deep.eq(new StringToken("text"))
+
+    token = lexer.getToken()
+    expect(token).to.deep.eq(new EndOfInputToken())
+  })
+
+  it(`parses multi line quoted string after multi line block comment`, () => {
+    let lexer = new Lexer(`/* multi
+    line comment */ "multi
+                      line text"`)
+
+    let token = lexer.getToken()
+    expect(token).to.deep.eq(new StringToken("multi\n line text"))
+
+    token = lexer.getToken()
+    expect(token).to.deep.eq(new EndOfInputToken())
+  })
 });

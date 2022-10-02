@@ -132,7 +132,7 @@ export class Lexer {
 
             this.pos += i
             let lines = current_string.slice(0, i).split("\n")
-            this.col = lines[lines.length - 1].length
+            this.col += lines[lines.length - 1].length
             this.row += lines.length - 1
 
             return new WhiteSpaceToken()
@@ -199,7 +199,7 @@ export class Lexer {
             let escaped_string = ""
             let i = 1
             for (; ; i++) {
-                if (i >= current_string.length - 1) {
+                if (i >= current_string.length) {
                     throw new LexerError("expected ending symbol for double quoted string")
                 }
 
@@ -232,7 +232,7 @@ export class Lexer {
                     escaped_string += current_string[i]
                 }
             }
-            let trimmed_string = trimSpaces(escaped_string, this.col)
+            let trimmed_string = trimSpaces(escaped_string, this.col + 1)
 
             this.pos += i + 1
             let lines = current_string.slice(0, i + 1).split("\n")
@@ -317,7 +317,7 @@ export class Lexer {
 }
 
 function trimSpaces(input: string, indent: number): string {
-    let result = ""
+    let result_lines: string[]= []
 
     input.split("\n").forEach((line, _) => {
         // count whitespaces
@@ -329,19 +329,21 @@ function trimSpaces(input: string, indent: number): string {
             } else if (line[i] == "\t") {
                 count += 8
             } else if (line[i] == "\n") {
-                result += "\n"
+                result_lines.push("")
                 return
             } else {
                 break
             }
         }
 
+        let result = ""
         if (count > indent) {
             result += " ".repeat(count - indent)
         }
 
         result += line.slice(i).trimEnd()
+        result_lines.push(result)
     })
 
-    return result
+    return result_lines.join("\n")
 }
