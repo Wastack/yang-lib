@@ -215,9 +215,14 @@ class Lexer {
                     escaped_string += current_string[i]
                 }
             }
+            let trimmed_string = trimSpaces(escaped_string, this.col)
+
             this.pos += i + 1
-            // TODO trim
-            return new StringToken(escaped_string)
+            let lines = current_string.slice(0, i + 1).split("\n")
+            this.col = lines[lines.length - 1].length
+            this.row += lines.length - 1
+
+            return new StringToken(trimmed_string)
         } else {
             // unquoted string
             let current_string = this.input.slice(this.pos)
@@ -292,4 +297,34 @@ class Lexer {
 
         } // end for
     }
+}
+
+function trimSpaces(input: string, indent: number): string {
+    let result = ""
+
+    input.split("\n").forEach((line, _) => {
+        // count whitespaces
+        let count = 0
+        let i = 0
+        for (; i < line.length; i++) {
+            if (line[i] == " ") {
+                count++
+            } else if (line[i] == "\t") {
+                count += 8
+            } else if (line[i] == "\n") {
+                result += "\n"
+                return
+            } else {
+                break
+            }
+        }
+
+        if (count > indent) {
+            result += " ".repeat(count - indent)
+        }
+
+        result += line.slice(i).trimEnd()
+    })
+
+    return result
 }
