@@ -1,4 +1,4 @@
 
-export function parseFromString(text: String): String {
+export function parseFromString(text: String): any {
     return "hello world"
 }
