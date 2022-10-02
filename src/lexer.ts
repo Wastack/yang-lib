@@ -50,7 +50,7 @@ class Lexer {
         return this.input.length - this.pos
     }
 
-    get_token(): any {
+    getToken(): any {
         let concat_str = false
         let str = ""
 
@@ -71,7 +71,7 @@ class Lexer {
                 return new EndOfInputToken()
             }
 
-            let token = this.get_single_token()
+            let token = this.getSingleToken()
 
             switch (token.constructor) {
                 case WhiteSpaceToken:
@@ -108,7 +108,7 @@ class Lexer {
         }
     }
 
-    get_single_token(): any {
+    getSingleToken(): any {
 
         let current_string = this.input.slice(this.pos)
 
