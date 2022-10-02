@@ -1,14 +1,10 @@
 
-class Token { }
+export class Token { }
 
-class PlusToken extends Token { }
-class CommentToken extends Token { }
-class WhiteSpaceToken extends Token { }
-class QuotedStringToken extends Token { }
-
-class BlockBeginToken extends Token { }
-class BlockEndToken extends Token { }
-class StringToken extends Token {
+export class PlusToken extends Token { }
+export class CommentToken extends Token { }
+export class WhiteSpaceToken extends Token { }
+export class QuotedStringToken extends Token { 
     content: string
 
     constructor(content: string) {
@@ -16,16 +12,27 @@ class StringToken extends Token {
         this.content = content
     }
 }
-class StatementEndToken extends Token { }
-class EndOfInputToken extends Token { }
 
-class LexerError extends Error {
+export class BlockBeginToken extends Token { }
+export class BlockEndToken extends Token { }
+export class StringToken extends Token {
+    content: string
+
+    constructor(content: string) {
+        super()
+        this.content = content
+    }
+}
+export class StatementEndToken extends Token { }
+export class EndOfInputToken extends Token { }
+
+export class LexerError extends Error {
     constructor(msg: string) {
         super(msg);
     }
 }
 
-class Lexer {
+export class Lexer {
     pos: number
     col: number
     row: number
@@ -50,7 +57,7 @@ class Lexer {
         return this.input.length - this.pos
     }
 
-    getToken(): any {
+    getToken(): Token {
         let concat_str = false
         let str = ""
 
@@ -85,11 +92,12 @@ class Lexer {
                     // continue with loop
                     break
                 case QuotedStringToken:
+                    let quotedToken = token as QuotedStringToken
                     if (!concat_str && str.length > 0) {
                         this.saveToken(token)
-                        return new StringToken(token.content)
+                        return new StringToken(quotedToken.content)
                     } else {
-                        str += token.content
+                        str += quotedToken.content
                         concat_str = false
                         // continue with loop
                     }
@@ -108,7 +116,7 @@ class Lexer {
         }
     }
 
-    getSingleToken(): any {
+    getSingleToken(): Token {
 
         let current_string = this.input.slice(this.pos)
 
@@ -147,10 +155,18 @@ class Lexer {
             this.row += lines.length - 1
 
             return new CommentToken()
-        } if (current_string.startsWith(";")) {
+        } else if (current_string.startsWith(";")) {
             this.pos++
             this.col++
             return new StatementEndToken()
+        } else if (current_string.startsWith("{")) {
+            this.pos++
+            this.col++
+            return new BlockBeginToken()
+        } else if (current_string.startsWith("}")) {
+            this.pos++
+            this.col++
+            return new BlockEndToken()
         } else if (current_string.startsWith("'")) {
             let end_pos = current_string.indexOf("'")
             if (end_pos == -1) {

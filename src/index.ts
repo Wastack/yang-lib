@@ -1,2 +1,1 @@
-
 export {parseFromString} from './main'
