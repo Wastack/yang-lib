@@ -10,7 +10,7 @@
     "test": "./node_modules/.bin/mocha ./src/*.test.ts"
   },
   "author": "Tamas Bunth",
-  "license": "ISC",
+  "license": "Apache-2.0 (see LICENCE)",
   "files": [
     "/gen"
   ],
