@@ -107,4 +107,36 @@ describe('Yang lexer', () => {
     token = lexer.getToken()
     expect(token).to.deep.eq(new EndOfInputToken())
   })
+
+  it(`parses empty quoted string`, () => {
+    let lexer = new Lexer(`identifier ""`)
+
+    let token = lexer.getToken()
+    expect(token).to.deep.eq(new StringToken("identifier"))
+    token = lexer.getToken()
+    expect(token).to.deep.eq(new StringToken(""))
+    token = lexer.getToken()
+    expect(token).to.deep.eq(new EndOfInputToken())
+
+    lexer = new Lexer(`identifier " "`)
+
+    token = lexer.getToken()
+    expect(token).to.deep.eq(new StringToken("identifier"))
+    token = lexer.getToken()
+    expect(token).to.deep.eq(new StringToken(""))
+    token = lexer.getToken()
+    expect(token).to.deep.eq(new EndOfInputToken())
+  })
+
+  it(`parses crazy multi line `, () => {
+    let lexer = new Lexer(`
+/**/ "string1
+    
+       string2
+    
+   string3   " + "string4" `)
+
+    let token = lexer.getToken()
+    expect(token).to.deep.eq(new StringToken(`string1\n\n string2\n\nstring3string4`))
+  })
 });

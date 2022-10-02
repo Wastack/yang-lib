@@ -60,6 +60,7 @@ export class Lexer {
     getToken(): Token {
         let concat_str = false
         let str = ""
+        let string_parsed = false
 
         if (this.saved_token != null) {
             let token = this.saved_token
@@ -69,7 +70,7 @@ export class Lexer {
 
         for (; ;) {
             if (this.len() == 0) {
-                if (str.length > 0) {
+                if (string_parsed) {
                     return new StringToken(str)
                 } else if (concat_str) {
                     return new LexerError("eof after + symbol")
@@ -98,6 +99,7 @@ export class Lexer {
                         return new StringToken(quotedToken.content)
                     } else {
                         str += quotedToken.content
+                        string_parsed = true
                         concat_str = false
                         // continue with loop
                     }
@@ -107,7 +109,7 @@ export class Lexer {
                         return new LexerError("expected quoted string after + symbol")
                     }
 
-                    if (str.length > 0) {
+                    if (string_parsed) {
                         this.saveToken(token)
                         return new StringToken(str)
                     }
@@ -168,6 +170,10 @@ export class Lexer {
             this.pos++
             this.col++
             return new BlockEndToken()
+        } else if (current_string.startsWith("+")) {
+            this.pos++
+            this.col++
+            return new PlusToken()
         } else if (current_string.startsWith("'")) {
             let end_pos = current_string.indexOf("'")
             if (end_pos == -1) {
@@ -180,7 +186,7 @@ export class Lexer {
             this.row += lines.length - 1
 
             let result = current_string.slice(1, current_string.length - 1)
-            return new StringToken(result)
+            return new QuotedStringToken(result)
         } else if (current_string.startsWith("\"")) {
             // NOTE: according to the rfc, the + sign can also be a part of
             // an unquoted string as a simple character, which means that theoretically this is a valid sequence of tokens:
@@ -239,7 +245,7 @@ export class Lexer {
             this.col = lines[lines.length - 1].length
             this.row += lines.length - 1
 
-            return new StringToken(trimmed_string)
+            return new QuotedStringToken(trimmed_string)
         } else {
             // unquoted string
             let current_string = this.input.slice(this.pos)
