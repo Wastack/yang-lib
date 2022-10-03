@@ -57,6 +57,12 @@ export class Lexer {
         return this.input.length - this.pos
     }
 
+    peek(): Token {
+        let token = this.getToken()
+        this.saveToken(token)
+        return token
+    }
+
     getToken(): Token {
         let concat_str = false
         let str = ""
