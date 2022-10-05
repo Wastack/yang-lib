@@ -16,13 +16,13 @@ export class Identifier {
 }
 
 export class UnprocessedStatement {
-    sub_statements: UnprocessedStatement[]
+    sub_statements: Map<string, UnprocessedStatement[]>
     identifier: Identifier
     prefix: string | null
     argument: string | null
 
     constructor(identifier: Identifier, prefix?: string, argument?: string) {
-        this.sub_statements = []
+        this.sub_statements = new Map()
         this.identifier = identifier
         this.argument = argument == undefined ? null : argument
         this.prefix = prefix == undefined ? null : prefix
@@ -69,14 +69,15 @@ export class UnprocessedStatement {
                 break
             }
 
-            result.sub_statements.push(child)
+            let stmts = result.sub_statements.get(child.identifier.content)
+            if (stmts != undefined) {
+                stmts.push(child)
+            } else {
+                result.sub_statements.set(child.identifier.content, [child])
+            }
         }
 
         return result
-    }
-
-    popSubStmt(): UnprocessedStatement | undefined {
-        return this.sub_statements.pop()
     }
 
     argumentOrError(): string {
@@ -86,73 +87,46 @@ export class UnprocessedStatement {
 
         return this.argument
     }
-}
-
-
-export class UnprocessedStatementParser {
-    /// Aggregated substatements of the same type
-    fetched: Map<string, UnprocessedStatement[]>
-
-    constructor() {
-        this.fetched = new Map()
-    }
-
-    fetch(parent: UnprocessedStatement) {
-        for (; ;) {
-            let child = parent.popSubStmt()
-            if (child == undefined) {
-                break
-            }
-
-            let entry = this.fetched.get(child?.identifier.content)
-            if (entry == undefined) {
-                this.fetched.set(child?.identifier.content, [child])
-            } else {
-                entry.push(child)
-            }
-        }
-    }
 
     takeOne(key: string): UnprocessedStatement {
-        let stmts = this.fetched.get(key)
+        let stmts = this.sub_statements.get(key)
         if (stmts == undefined || stmts.length == 0 || stmts.length > 1) {
             throw new LexerError(`cardinality error: there should be 1 ${key}`)
         }
 
-        this.fetched.delete(key)
+        this.sub_statements.delete(key)
         return stmts[0]
     }
 
     takeOptional(key: string): UnprocessedStatement | undefined {
-        let stmts = this.fetched.get(key)
+        let stmts = this.sub_statements.get(key)
         if (stmts != undefined && stmts.length > 1) {
             throw new LexerError(`cardinality error: there should be 0..1 ${key}`)
         }
 
-        this.fetched.delete(key)
+        this.sub_statements.delete(key)
         return stmts == undefined ? undefined : (stmts.length == 0 ? undefined : stmts[0])
     }
 
     takeOneOrMore(key: string): UnprocessedStatement[] {
-        let stmts = this.fetched.get(key)
+        let stmts = this.sub_statements.get(key)
         if (stmts == undefined || stmts.length == 0) {
             throw new LexerError(`cardinality error: there should be 1..n ${key}`)
         }
 
-        this.fetched.delete(key)
+        this.sub_statements.delete(key)
         return stmts == undefined ? [] : stmts
     }
 
     takeZeroOrMore(key: string): UnprocessedStatement[] {
-        let stmts = this.fetched.get(key)
-        this.fetched.delete(key)
+        let stmts = this.sub_statements.get(key)
+        this.sub_statements.delete(key)
         return stmts == undefined ? [] : stmts
     }
 
     ensureEmpty() {
-        if (this.fetched.size > 0) {
-            throw new LexerError(`Found unknown substatements: ${this.fetched.keys()}`)
+        if (this.sub_statements.size > 0) {
+            throw new LexerError(`Found unknown substatements: ${this.sub_statements.keys()}`)
         }
     }
-
 }

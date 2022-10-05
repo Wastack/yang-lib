@@ -1,4 +1,4 @@
-import { Identifier, ParserError, UnprocessedStatement, UnprocessedStatementParser } from "./unprocessed_stmt";
+import { Identifier, ParserError, UnprocessedStatement } from "./unprocessed_stmt";
 
 export class ModuleStmt {
     constructor(
@@ -13,17 +13,14 @@ export class ModuleStmt {
     static parse(unprocessed: UnprocessedStatement): ModuleStmt {
         let identifier = new Identifier(unprocessed.argumentOrError())
 
-        let parser = new UnprocessedStatementParser()
-        parser.fetch(unprocessed)
-
         let result = new ModuleStmt(identifier,
-            parser.takeOne("module-header"),
-            parser.takeOne("linkage"),
-            parser.takeOne("meta"),
-            parser.takeOne("revision"),
-            parser.takeOne("body"))
+            unprocessed.takeOne("module-header"),
+            unprocessed.takeOne("linkage"),
+            unprocessed.takeOne("meta"),
+            unprocessed.takeOne("revision"),
+            unprocessed.takeOne("body"))
 
-        parser.ensureEmpty()
+        unprocessed.ensureEmpty()
         return result
     }
 }
@@ -48,23 +45,20 @@ export class LeafStmt {
     static parse(unprocessed: UnprocessedStatement): LeafStmt {
         let identifier = new Identifier(unprocessed.argumentOrError())
 
-        let parser = new UnprocessedStatementParser()
-        parser.fetch(unprocessed)
+        let when = unprocessed.takeOptional("when")
+        let units = unprocessed.takeOptional("units")
+        let default_ = unprocessed.takeOptional("default")
+        let config = unprocessed.takeOptional("config")
+        let mandatory = unprocessed.takeOptional("mandatory")
+        let status = unprocessed.takeOptional("status")
 
-        let when = parser.takeOptional("when")
-        let units = parser.takeOptional("units")
-        let default_ = parser.takeOptional("default")
-        let config = parser.takeOptional("config")
-        let mandatory = parser.takeOptional("mandatory")
-        let status = parser.takeOptional("status")
-
-        let description = parser.takeOptional("description")
-        let reference = parser.takeOptional("reference")
+        let description = unprocessed.takeOptional("description")
+        let reference = unprocessed.takeOptional("reference")
         return new LeafStmt(
             identifier,
-            parser.takeZeroOrMore("if-feature").map((v) => v.argumentOrError()),
-            parser.takeZeroOrMore("must").map((v) => MustStmt.parse(v)),
-            parser.takeOne("type"),
+            unprocessed.takeZeroOrMore("if-feature").map((v) => v.argumentOrError()),
+            unprocessed.takeZeroOrMore("must").map((v) => MustStmt.parse(v)),
+            unprocessed.takeOne("type"),
             convertStatusStmt(status?.argumentOrError()),
             when == undefined ? undefined : WhenStmt.parse(when),
             units?.argumentOrError(),
@@ -100,25 +94,22 @@ export class LeafListStmt {
     static parse(unprocessed: UnprocessedStatement): LeafListStmt {
         let identifier = new Identifier(unprocessed.argumentOrError())
 
-        let parser = new UnprocessedStatementParser()
-        parser.fetch(unprocessed)
+        let ordered_by = unprocessed.takeOptional("ordered-by")
+        let when = unprocessed.takeOptional("when")
+        let units = unprocessed.takeOptional("units")
+        let config = unprocessed.takeOptional("config")
+        let min_elements = unprocessed.takeOptional("min-elements")?.argumentOrError()
+        let max_elements = unprocessed.takeOptional("max-elements")?.argumentOrError()
+        let status = unprocessed.takeOptional("status")
 
-        let ordered_by = parser.takeOptional("ordered-by")
-        let when = parser.takeOptional("when")
-        let units = parser.takeOptional("units")
-        let config = parser.takeOptional("config")
-        let min_elements = parser.takeOptional("min-elements")?.argumentOrError()
-        let max_elements = parser.takeOptional("max-elements")?.argumentOrError()
-        let status = parser.takeOptional("status")
-
-        let description = parser.takeOptional("description")
-        let reference = parser.takeOptional("reference")
+        let description = unprocessed.takeOptional("description")
+        let reference = unprocessed.takeOptional("reference")
         return new LeafListStmt(
             identifier,
-            parser.takeZeroOrMore("if-feature").map((v) => v.argumentOrError()),
-            parser.takeZeroOrMore("must").map((v) => MustStmt.parse(v)),
-            parser.takeZeroOrMore("default").map((v) => v.argumentOrError()),
-            parser.takeOne("type"),
+            unprocessed.takeZeroOrMore("if-feature").map((v) => v.argumentOrError()),
+            unprocessed.takeZeroOrMore("must").map((v) => MustStmt.parse(v)),
+            unprocessed.takeZeroOrMore("default").map((v) => v.argumentOrError()),
+            unprocessed.takeOne("type"),
             convertOrderedByStmt(ordered_by?.argumentOrError()),
             convertStatusStmt(status?.argumentOrError()),
             when == undefined ? undefined : WhenStmt.parse(when),
@@ -200,11 +191,8 @@ export class WhenStmt {
     static parse(unprocessed: UnprocessedStatement): WhenStmt {
         let arg = unprocessed.argumentOrError()
 
-        let parser = new UnprocessedStatementParser()
-        parser.fetch(unprocessed)
-
-        let description = parser.takeOptional("description")?.argumentOrError()
-        let reference = parser.takeOptional("reference")?.argumentOrError()
+        let description = unprocessed.takeOptional("description")?.argumentOrError()
+        let reference = unprocessed.takeOptional("reference")?.argumentOrError()
 
         return new WhenStmt(arg, description, reference)
     }
@@ -222,15 +210,12 @@ export class MustStmt {
     static parse(unprocessed: UnprocessedStatement): MustStmt {
         let arg = unprocessed.argumentOrError()
 
-        let parser = new UnprocessedStatementParser()
-        parser.fetch(unprocessed)
-
         return new MustStmt(
             arg,
-            parser.takeOptional("error-message")?.argumentOrError(),
-            parser.takeOptional("error-app-tag")?.argumentOrError(),
-            parser.takeOptional("description")?.argumentOrError(),
-            parser.takeOptional("reference")?.argumentOrError(),
+            unprocessed.takeOptional("error-message")?.argumentOrError(),
+            unprocessed.takeOptional("error-app-tag")?.argumentOrError(),
+            unprocessed.takeOptional("description")?.argumentOrError(),
+            unprocessed.takeOptional("reference")?.argumentOrError(),
         )
     }
 }
