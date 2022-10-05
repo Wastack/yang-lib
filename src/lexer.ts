@@ -85,7 +85,7 @@ export class Lexer {
                 return new EndOfInputToken()
             }
 
-            let token = this.getSingleToken()
+            let token = this.getSingleToken(string_parsed)
 
             switch (token.constructor) {
                 case WhiteSpaceToken:
@@ -124,7 +124,7 @@ export class Lexer {
         }
     }
 
-    getSingleToken(): Token {
+    getSingleToken(afterQuotedString?: boolean): Token {
 
         let current_string = this.input.slice(this.pos)
 
@@ -176,7 +176,19 @@ export class Lexer {
             this.pos++
             this.col++
             return new BlockEndToken()
-        } else if (current_string.startsWith("+")) {
+        } else if (current_string.startsWith("+") && afterQuotedString && isNextTokenQuotedString(current_string.slice(1))) {
+            // according to the rfc, the + sign can also be a part of
+            // an unquoted string as a simple character, which means that theoretically this is a valid sequence of tokens:
+            //
+            // "quoted" +mystring
+            // 
+            // which supposed to be translated to two string tokens: `quoted` and `+mystring`.
+            //
+            // On the other hand, the following lines:
+            //
+            // "quoted" +"mystring"
+            //
+            // is a valid concatenation of two double quoted strings.
             this.pos++
             this.col++
             return new PlusToken()
@@ -194,20 +206,6 @@ export class Lexer {
             let result = current_string.slice(1, current_string.length - 1)
             return new QuotedStringToken(result)
         } else if (current_string.startsWith("\"")) {
-            // NOTE: according to the rfc, the + sign can also be a part of
-            // an unquoted string as a simple character, which means that theoretically this is a valid sequence of tokens:
-            //
-            // "quoted" +mystring
-            // 
-            // which supposed to be translated to two string tokens: `quoted` and `+mystring`.
-            //
-            // This use-case is so awkward though that this implemenation does not support it.
-            //
-            // On the other hand, the following lines:
-            //
-            // "quoted" +"mystring"
-            //
-            // is a valid concatenation of two double quoted strings.
             let escaped_string = ""
             let i = 1
             for (; ; i++) {
@@ -358,4 +356,9 @@ function trimSpaces(input: string, indent: number): string {
     })
 
     return result_lines.join("\n")
+}
+
+function isNextTokenQuotedString(text: string): boolean {
+    let trimmed = text.trimStart()
+    return trimmed.startsWith(`"`) || trimmed.startsWith(`'`)
 }

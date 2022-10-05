@@ -6,7 +6,7 @@ import * as chai from 'chai';
 const expect = chai.expect;
 describe('Yang lexer', () => {
 
-  it('should parse module { }' , () => {
+  it('should parse module { }', () => {
     let lexer = new Lexer(`module { }`)
     let token = lexer.getToken()
     expect(token).to.deep.eq(new StringToken("module"));
@@ -60,13 +60,12 @@ describe('Yang lexer', () => {
           }
         }
     }`)
-     
+
     let current_token = lexer.getToken()
     let count = 0
-    while(!(current_token instanceof EndOfInputToken))
-    {
-        count++
-        current_token = lexer.getToken()
+    while (!(current_token instanceof EndOfInputToken)) {
+      count++
+      current_token = lexer.getToken()
     }
     expect(count).to.eq(120)
   })
@@ -139,4 +138,35 @@ describe('Yang lexer', () => {
     let token = lexer.getToken()
     expect(token).to.deep.eq(new StringToken(`string1\n\n string2\n\nstring3string4`))
   })
+
+  it(`parses plus symbol in identifier`, () => {
+    let lexer = new Lexer(`min-elements +32;`)
+    let token = lexer.getToken()
+    expect(token).to.deep.eq(new StringToken(`min-elements`))
+
+    token = lexer.getToken()
+    expect(token).to.deep.eq(new StringToken(`+32`))
+
+    token = lexer.getToken()
+    expect(token).to.deep.eq(new StatementEndToken())
+
+    token = lexer.getToken()
+    expect(token).to.deep.eq(new EndOfInputToken())
+  })
+
+  it(`parses crazy usages of + sybmol`, () => {
+    let lexer = new Lexer(`"
+"+++++""+""+`)
+    let token = lexer.getToken()
+    expect(token).to.deep.eq(new StringToken(`\n`))
+    token = lexer.getToken()
+    expect(token).to.deep.eq(new StringToken(`+++++`))
+    token = lexer.getToken()
+    expect(token).to.deep.eq(new StringToken(``))
+    token = lexer.getToken()
+    expect(token).to.deep.eq(new StringToken(`+`))
+    token = lexer.getToken()
+    expect(token).to.deep.eq(new EndOfInputToken())
+  })
+
 });
