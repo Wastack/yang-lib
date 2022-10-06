@@ -109,4 +109,14 @@ describe(`Yang Parser`, () => {
         expect(leaf_list.max_elements).to.eq(53)
         expect(leaf_list.ordered_by).to.eq(OrderedByStmt.system)
     })
+
+    it(`'leaf-list' 'type' has prefix, wrongfully`, () => {
+        let bad_leaf_list = good_leaf_list
+        let type_stmt = bad_leaf_list.sub_statements.get("type")![0]
+        bad_leaf_list.takeOne("type")
+        type_stmt.prefix = "my-prefix"
+        bad_leaf_list.add(type_stmt)
+
+        expect(() => LeafListStmt.parse(bad_leaf_list)).to.throw(ParserError)
+    })
 })

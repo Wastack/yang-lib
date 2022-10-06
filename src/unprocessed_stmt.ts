@@ -18,22 +18,26 @@ export class Identifier {
 export class UnprocessedStatement {
     sub_statements: Map<string, UnprocessedStatement[]>
     identifier: Identifier
-    prefix: string | null
-    argument: string | null
+    prefix?: string
+    argument?: string
 
     constructor(identifier: Identifier, prefix?: string, argument?: string) {
         this.sub_statements = new Map()
         this.identifier = identifier
-        this.argument = argument == undefined ? null : argument
-        this.prefix = prefix == undefined ? null : prefix
+        this.argument = argument
+        this.prefix = prefix
     }
 
     add(unprocessed_stmt: UnprocessedStatement) {
-        let stmts = this.sub_statements.get(unprocessed_stmt.identifier.content)
+        let id = unprocessed_stmt.identifier.content
+        let prefix = unprocessed_stmt.prefix
+        let key = prefix ? [id, prefix].join(":") : id
+
+        let stmts = this.sub_statements.get(key)
             if (stmts != undefined) {
                 stmts.push(unprocessed_stmt)
             } else {
-                this.sub_statements.set(unprocessed_stmt.identifier.content, [unprocessed_stmt])
+                this.sub_statements.set(key, [unprocessed_stmt])
             }
     }
 
@@ -89,11 +93,13 @@ export class UnprocessedStatement {
         }
 
         let arg = this.argument
-        this.argument = null
+        this.argument = undefined
         return arg
     }
 
-    takeOne(key: string): UnprocessedStatement {
+    takeOne(key: string, prefix?: string): UnprocessedStatement {
+        // empty or undefined
+        key = prefix ? [key, prefix!].join(":"): key
         let stmts = this.sub_statements.get(key)
         if (stmts == undefined || stmts.length == 0 || stmts.length > 1) {
             throw new ParserError(`cardinality error: there should be 1 ${key}`)
@@ -103,7 +109,9 @@ export class UnprocessedStatement {
         return stmts[0]
     }
 
-    takeOptional(key: string): UnprocessedStatement | undefined {
+    takeOptional(key: string, prefix?: string): UnprocessedStatement | undefined {
+        // empty or undefined
+        key = prefix ? [key, prefix!].join(":"): key
         let stmts = this.sub_statements.get(key)
         if (stmts != undefined && stmts.length > 1) {
             throw new ParserError(`cardinality error: there should be 0..1 ${key}`)
@@ -113,7 +121,9 @@ export class UnprocessedStatement {
         return stmts == undefined ? undefined : (stmts.length == 0 ? undefined : stmts[0])
     }
 
-    takeOneOrMore(key: string): UnprocessedStatement[] {
+    takeOneOrMore(key: string, prefix?: string): UnprocessedStatement[] {
+        // empty or undefined
+        key = prefix ? [key, prefix!].join(":"): key
         let stmts = this.sub_statements.get(key)
         if (stmts == undefined || stmts.length == 0) {
             throw new ParserError(`cardinality error: there should be 1..n ${key}`)
@@ -123,7 +133,9 @@ export class UnprocessedStatement {
         return stmts == undefined ? [] : stmts
     }
 
-    takeZeroOrMore(key: string): UnprocessedStatement[] {
+    takeZeroOrMore(key: string, prefix?: string): UnprocessedStatement[] {
+        // empty or undefined
+        key = prefix ? [key, prefix!].join(":"): key
         let stmts = this.sub_statements.get(key)
         this.sub_statements.delete(key)
         return stmts == undefined ? [] : stmts
@@ -131,8 +143,8 @@ export class UnprocessedStatement {
 
     ensureEmpty() {
         if (this.sub_statements.size > 0) {
-            throw new ParserError(`Found unknown substatements: ${this.sub_statements.keys()}`)
-        } else if (this.argument != null) {
+            throw new ParserError(`Found unknown substatements: ${Array.from(this.sub_statements.keys()).join(', ')}`)
+        } else if (this.argument != undefined) {
             throw new ParserError(`unexpected argument entry for substatement ${this.identifier}`)
         }
     }
@@ -150,7 +162,7 @@ export class UnprocessedStatement {
             let children: any[] = []
             switch (v.cardinality) {
                 case Cardinality.ZeroOrOne:
-                    let child = this.takeOptional(v.idenfitier)
+                    let child = this.takeOptional(v.idenfitier, v.prefix)
                     if (child == undefined) {
                         result.push(undefined)
                     } else {
@@ -158,16 +170,16 @@ export class UnprocessedStatement {
                     }
                     break
                 case Cardinality.ZeroOrMore:
-                    this.takeZeroOrMore(v.idenfitier).forEach((child) => {
+                    this.takeZeroOrMore(v.idenfitier, v.prefix).forEach((child) => {
                         children.push(v.parseFunc(child))
                     })
                     result.push(children)
                     break
                 case Cardinality.One:
-                    result.push(v.parseFunc(this.takeOne(v.idenfitier)))
+                    result.push(v.parseFunc(this.takeOne(v.idenfitier, v.prefix)))
                     break
                 case Cardinality.More:
-                    this.takeZeroOrMore(v.idenfitier).forEach((child) => {
+                    this.takeZeroOrMore(v.idenfitier, v.prefix).forEach((child) => {
                         children.push(v.parseFunc(child))
                     })
                     result.push(children)
@@ -195,5 +207,6 @@ export class TakeParam<T, C extends Cardinality> {
         public idenfitier: string,
         public cardinality: C,
         public parseFunc: (s: UnprocessedStatement) => T,
+        public prefix?: string,
     ) { }
 }
