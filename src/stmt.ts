@@ -1,4 +1,4 @@
-import { Identifier, ParserError, UnprocessedStatement } from "./unprocessed_stmt";
+import { Cardinality, Identifier, ParserError, TakeParam, UnprocessedStatement } from "./unprocessed_stmt";
 
 export class ModuleStmt {
     constructor(
@@ -11,27 +11,30 @@ export class ModuleStmt {
         public body: UnprocessedStatement) { }
 
     static parse(unprocessed: UnprocessedStatement): ModuleStmt {
-        let identifier = new Identifier(unprocessed.argumentOrError())
-
-        let result = new ModuleStmt(identifier,
-            unprocessed.takeOne("module-header"),
-            unprocessed.takeOne("linkage"),
-            unprocessed.takeOne("meta"),
-            unprocessed.takeOne("revision"),
-            unprocessed.takeOne("body"))
-
-        unprocessed.ensureEmpty()
-        return result
+        return new ModuleStmt(
+            new Identifier(unprocessed.argumentOrError()),
+            ...unprocessed.takeAll(
+                new TakeParam("module-header", Cardinality.One, (v) => v),
+                new TakeParam("linkage", Cardinality.One, (v) => v),
+                new TakeParam("meta", Cardinality.One, (v) => v),
+                new TakeParam("revision", Cardinality.One, (v) => v),
+                new TakeParam("body", Cardinality.One, (v) => v)
+            )
+        )
     }
 }
+
 
 export class LeafStmt {
     constructor(
         public identifier: Identifier,
+
+        /// if-feature
         public if_feature: string[],
         public must: MustStmt[],
+
         public type: UnprocessedStatement,
-        public status: StatusStmt,
+        public status?: StatusStmt,
 
         public when?: WhenStmt,
         public units?: string,
@@ -43,30 +46,21 @@ export class LeafStmt {
     ) { }
 
     static parse(unprocessed: UnprocessedStatement): LeafStmt {
-        let identifier = new Identifier(unprocessed.argumentOrError())
-
-        let when = unprocessed.takeOptional("when")
-        let units = unprocessed.takeOptional("units")
-        let default_ = unprocessed.takeOptional("default")
-        let config = unprocessed.takeOptional("config")
-        let mandatory = unprocessed.takeOptional("mandatory")
-        let status = unprocessed.takeOptional("status")
-
-        let description = unprocessed.takeOptional("description")
-        let reference = unprocessed.takeOptional("reference")
         return new LeafStmt(
-            identifier,
-            unprocessed.takeZeroOrMore("if-feature").map((v) => v.argumentOrError()),
-            unprocessed.takeZeroOrMore("must").map((v) => MustStmt.parse(v)),
-            unprocessed.takeOne("type"),
-            convertStatusStmt(status?.argumentOrError()),
-            when == undefined ? undefined : WhenStmt.parse(when),
-            units?.argumentOrError(),
-            default_?.argumentOrError(),
-            config == undefined ? undefined : convertBoolean(config?.argumentOrError()),
-            mandatory == undefined ? undefined : convertBoolean(mandatory?.argumentOrError()),
-            description?.argumentOrError(),
-            reference?.argumentOrError(),
+            new Identifier(unprocessed.argumentOrError()),
+            ...unprocessed.takeAll(
+                new TakeParam("if-feature", Cardinality.ZeroOrMore, (v) => v.argumentOrError()),
+                new TakeParam("must", Cardinality.ZeroOrMore, MustStmt.parse),
+                new TakeParam("type", Cardinality.One, (v) => v),
+                new TakeParam("status", Cardinality.ZeroOrOne, (v) => v),
+                new TakeParam("when", Cardinality.ZeroOrOne, WhenStmt.parse),
+                new TakeParam("units", Cardinality.ZeroOrOne, (v) => v.argumentOrError()),
+                new TakeParam("default", Cardinality.ZeroOrOne, (v) => v.argumentOrError()),
+                new TakeParam("config", Cardinality.ZeroOrOne, (v) => convertBoolean(v.argumentOrError())),
+                new TakeParam("mandatory", Cardinality.ZeroOrOne, (v) => convertBoolean(v.argumentOrError())),
+                new TakeParam("description", Cardinality.ZeroOrOne, (u) => u.argumentOrError()),
+                new TakeParam("reference", Cardinality.ZeroOrOne, (u) => u.argumentOrError()),
+            ),
         )
     }
 }
@@ -79,8 +73,8 @@ export class LeafListStmt {
         public must: MustStmt[],
         public default_: string[],
         public type: UnprocessedStatement,
-        public ordered_by: OrderedByStmt,
-        public status: StatusStmt,
+        public ordered_by?: OrderedByStmt,
+        public status?: StatusStmt,
 
         public when?: WhenStmt,
         public units?: string,
@@ -89,43 +83,33 @@ export class LeafListStmt {
         public max_elements?: number,
         public description?: string,
         public reference?: string
-    ) {}
+    ) { }
 
     static parse(unprocessed: UnprocessedStatement): LeafListStmt {
-        let identifier = new Identifier(unprocessed.argumentOrError())
-
-        let ordered_by = unprocessed.takeOptional("ordered-by")
-        let when = unprocessed.takeOptional("when")
-        let units = unprocessed.takeOptional("units")
-        let config = unprocessed.takeOptional("config")
-        let min_elements = unprocessed.takeOptional("min-elements")?.argumentOrError()
-        let max_elements = unprocessed.takeOptional("max-elements")?.argumentOrError()
-        let status = unprocessed.takeOptional("status")
-
-        let description = unprocessed.takeOptional("description")
-        let reference = unprocessed.takeOptional("reference")
         return new LeafListStmt(
-            identifier,
-            unprocessed.takeZeroOrMore("if-feature").map((v) => v.argumentOrError()),
-            unprocessed.takeZeroOrMore("must").map((v) => MustStmt.parse(v)),
-            unprocessed.takeZeroOrMore("default").map((v) => v.argumentOrError()),
-            unprocessed.takeOne("type"),
-            convertOrderedByStmt(ordered_by?.argumentOrError()),
-            convertStatusStmt(status?.argumentOrError()),
-            when == undefined ? undefined : WhenStmt.parse(when),
-            units?.argumentOrError(),
-            config == undefined ? undefined : convertBoolean(config?.argumentOrError()),
-            min_elements == undefined ? undefined : convertNumber(min_elements),
-            max_elements == undefined ? undefined : convertNumber(max_elements),
-            description?.argumentOrError(),
-            reference?.argumentOrError(),
-        )
+            new Identifier(unprocessed.argumentOrError()),
+            ...unprocessed.takeAll(
+                new TakeParam("if-feature", Cardinality.ZeroOrMore, (v) => v.argumentOrError()),
+                new TakeParam("must", Cardinality.ZeroOrMore, MustStmt.parse),
+                new TakeParam("default", Cardinality.ZeroOrMore, (v) => v.argumentOrError()),
+                new TakeParam("type", Cardinality.One, (v) => v),
 
+                new TakeParam("ordered-by", Cardinality.ZeroOrOne, (v) => convertOrderedByStmt(v.argumentOrError())),
+                new TakeParam("status", Cardinality.ZeroOrOne, (v) => v.argumentOrError()),
+                new TakeParam("when", Cardinality.ZeroOrOne, WhenStmt.parse),
+                new TakeParam("units", Cardinality.ZeroOrOne, (v) => v.argumentOrError()),
+                new TakeParam("config", Cardinality.ZeroOrOne, (v) => convertBoolean(v.argumentOrError())),
+                new TakeParam("min-elements", Cardinality.ZeroOrOne, (v) => convertNumber(v.argumentOrError())),
+                new TakeParam("max-elements", Cardinality.ZeroOrOne, (v) => convertNumber(v.argumentOrError())),
+                new TakeParam("description", Cardinality.ZeroOrOne, (u) => u.argumentOrError()),
+                new TakeParam("reference", Cardinality.ZeroOrOne, (u) => u.argumentOrError()),
+            )
+        )
     }
 }
 
 function convertNumber(text: string): number {
-    let num = +text       
+    let num = +text
     if (Number.isNaN(num)) {
         throw new ParserError(`expected the string token '${text}' to be a number`)
     }
@@ -189,12 +173,13 @@ export class WhenStmt {
 
 
     static parse(unprocessed: UnprocessedStatement): WhenStmt {
-        let arg = unprocessed.argumentOrError()
-
-        let description = unprocessed.takeOptional("description")?.argumentOrError()
-        let reference = unprocessed.takeOptional("reference")?.argumentOrError()
-
-        return new WhenStmt(arg, description, reference)
+        return new WhenStmt(
+            unprocessed.argumentOrError(),
+            ...unprocessed.takeAll(
+                new TakeParam("description", Cardinality.ZeroOrOne, (u) => u.argumentOrError()),
+                new TakeParam("reference", Cardinality.ZeroOrOne, (u) => u.argumentOrError()),
+            )
+        )
     }
 }
 
@@ -208,14 +193,14 @@ export class MustStmt {
     ) { }
 
     static parse(unprocessed: UnprocessedStatement): MustStmt {
-        let arg = unprocessed.argumentOrError()
-
         return new MustStmt(
-            arg,
-            unprocessed.takeOptional("error-message")?.argumentOrError(),
-            unprocessed.takeOptional("error-app-tag")?.argumentOrError(),
-            unprocessed.takeOptional("description")?.argumentOrError(),
-            unprocessed.takeOptional("reference")?.argumentOrError(),
+            unprocessed.argumentOrError(),
+            ...unprocessed.takeAll(
+                new TakeParam("error-message", Cardinality.ZeroOrOne, (u) => u.argumentOrError()),
+                new TakeParam("error-app-tag", Cardinality.ZeroOrOne, (u) => u.argumentOrError()),
+                new TakeParam("description", Cardinality.ZeroOrOne, (u) => u.argumentOrError()),
+                new TakeParam("reference", Cardinality.ZeroOrOne, (u) => u.argumentOrError()),
+            )
         )
     }
 }

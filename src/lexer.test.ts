@@ -169,4 +169,4 @@ describe('Yang lexer', () => {
     expect(token).to.deep.eq(new EndOfInputToken())
   })
 
-});
+})

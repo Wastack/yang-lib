@@ -85,7 +85,9 @@ export class UnprocessedStatement {
             throw new ParserError("argument is mandatory for " + this.identifier)
         }
 
-        return this.argument
+        let arg = this.argument
+        this.argument = null
+        return arg
     }
 
     takeOne(key: string): UnprocessedStatement {
@@ -127,6 +129,68 @@ export class UnprocessedStatement {
     ensureEmpty() {
         if (this.sub_statements.size > 0) {
             throw new LexerError(`Found unknown substatements: ${this.sub_statements.keys()}`)
+        } else if (this.argument != null) {
+            throw new LexerError(`unexpected argument entry for substatement ${this.identifier}`)
         }
     }
+
+    /**
+     * Takes all substatements of `this` and convert them to their appropriate
+     * types, which is defined by the `values` parameter.
+     * 
+     * This call will also make sure that the argument if fetched if needed.
+     */
+    takeAll<T extends TakeParam<any, Cardinality>[]>(...values: T): TakeResult<T> {
+        let result: any[] = []
+
+        values.forEach((v) => {
+            let children: any[] = []
+            switch (v.cardinality) {
+                case Cardinality.ZeroOrOne:
+                    let child = this.takeOptional(v.idenfitier)
+                    if (child == undefined) {
+                        result.push(undefined)
+                    } else {
+                        result.push(v.parseFunc(child))
+                    }
+                    break
+                case Cardinality.ZeroOrMore:
+                    this.takeZeroOrMore(v.idenfitier).forEach((child) => {
+                        children.push(v.parseFunc(child))
+                    })
+                    result.push(children)
+                    break
+                case Cardinality.One:
+                    result.push(v.parseFunc(this.takeOne(v.idenfitier)))
+                    break
+                case Cardinality.More:
+                    this.takeZeroOrMore(v.idenfitier).forEach((child) => {
+                        children.push(v.parseFunc(child))
+                    })
+                    result.push(children)
+                    break
+            }
+        })
+
+        this.ensureEmpty()
+
+        return result as TakeResult<T>
+    }
+}
+
+export type TakeResult<T> = { [P in keyof T]: P extends TakeParam<infer RESULT, Cardinality.ZeroOrOne> ? RESULT : T extends TakeParam<infer RESULT, Cardinality.One> ? RESULT : P extends TakeParam<infer RESULT, infer _C> ? RESULT[] : never }
+
+export enum Cardinality {
+    ZeroOrOne,
+    One,
+    ZeroOrMore,
+    More,
+}
+
+export class TakeParam<T, C extends Cardinality> {
+    constructor(
+        public idenfitier: string,
+        public cardinality: C,
+        public parseFunc: (s: UnprocessedStatement) => T,
+    ) { }
 }
