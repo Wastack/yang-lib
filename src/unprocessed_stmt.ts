@@ -1,4 +1,4 @@
-import { BlockBeginToken, Lexer, LexerError, StatementEndToken, StringToken } from "./lexer"
+import { BlockBeginToken, Lexer, StatementEndToken, StringToken } from "./lexer"
 
 
 export class ParserError extends Error {
@@ -96,7 +96,7 @@ export class UnprocessedStatement {
     takeOne(key: string): UnprocessedStatement {
         let stmts = this.sub_statements.get(key)
         if (stmts == undefined || stmts.length == 0 || stmts.length > 1) {
-            throw new LexerError(`cardinality error: there should be 1 ${key}`)
+            throw new ParserError(`cardinality error: there should be 1 ${key}`)
         }
 
         this.sub_statements.delete(key)
@@ -106,7 +106,7 @@ export class UnprocessedStatement {
     takeOptional(key: string): UnprocessedStatement | undefined {
         let stmts = this.sub_statements.get(key)
         if (stmts != undefined && stmts.length > 1) {
-            throw new LexerError(`cardinality error: there should be 0..1 ${key}`)
+            throw new ParserError(`cardinality error: there should be 0..1 ${key}`)
         }
 
         this.sub_statements.delete(key)
@@ -116,7 +116,7 @@ export class UnprocessedStatement {
     takeOneOrMore(key: string): UnprocessedStatement[] {
         let stmts = this.sub_statements.get(key)
         if (stmts == undefined || stmts.length == 0) {
-            throw new LexerError(`cardinality error: there should be 1..n ${key}`)
+            throw new ParserError(`cardinality error: there should be 1..n ${key}`)
         }
 
         this.sub_statements.delete(key)
@@ -131,9 +131,9 @@ export class UnprocessedStatement {
 
     ensureEmpty() {
         if (this.sub_statements.size > 0) {
-            throw new LexerError(`Found unknown substatements: ${this.sub_statements.keys()}`)
+            throw new ParserError(`Found unknown substatements: ${this.sub_statements.keys()}`)
         } else if (this.argument != null) {
-            throw new LexerError(`unexpected argument entry for substatement ${this.identifier}`)
+            throw new ParserError(`unexpected argument entry for substatement ${this.identifier}`)
         }
     }
 

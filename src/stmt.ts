@@ -29,7 +29,6 @@ export class LeafStmt {
     constructor(
         public identifier: Identifier,
 
-        /// if-feature
         public if_feature: string[],
         public must: MustStmt[],
 
