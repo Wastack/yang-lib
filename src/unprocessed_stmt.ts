@@ -28,6 +28,14 @@ export class UnprocessedStatement {
         this.prefix = prefix == undefined ? null : prefix
     }
 
+    add(unprocessed_stmt: UnprocessedStatement) {
+        let stmts = this.sub_statements.get(unprocessed_stmt.identifier.content)
+            if (stmts != undefined) {
+                stmts.push(unprocessed_stmt)
+            } else {
+                this.sub_statements.set(unprocessed_stmt.identifier.content, [unprocessed_stmt])
+            }
+    }
 
     /// statement = keyword [argument] (";" / "{" *statement "}")
     static Parse(lexer: Lexer): UnprocessedStatement | null {
@@ -69,12 +77,7 @@ export class UnprocessedStatement {
                 break
             }
 
-            let stmts = result.sub_statements.get(child.identifier.content)
-            if (stmts != undefined) {
-                stmts.push(child)
-            } else {
-                result.sub_statements.set(child.identifier.content, [child])
-            }
+            result.add(child)
         }
 
         return result

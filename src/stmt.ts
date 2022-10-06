@@ -52,7 +52,7 @@ export class LeafStmt {
                 new TakeParam("if-feature", Cardinality.ZeroOrMore, (v) => v.argumentOrError()),
                 new TakeParam("must", Cardinality.ZeroOrMore, MustStmt.parse),
                 new TakeParam("type", Cardinality.One, (v) => v),
-                new TakeParam("status", Cardinality.ZeroOrOne, (v) => v),
+                new TakeParam("status", Cardinality.ZeroOrOne, (v) => convertStatusStmt(v.argumentOrError())),
                 new TakeParam("when", Cardinality.ZeroOrOne, WhenStmt.parse),
                 new TakeParam("units", Cardinality.ZeroOrOne, (v) => v.argumentOrError()),
                 new TakeParam("default", Cardinality.ZeroOrOne, (v) => v.argumentOrError()),
@@ -95,7 +95,7 @@ export class LeafListStmt {
                 new TakeParam("type", Cardinality.One, (v) => v),
 
                 new TakeParam("ordered-by", Cardinality.ZeroOrOne, (v) => convertOrderedByStmt(v.argumentOrError())),
-                new TakeParam("status", Cardinality.ZeroOrOne, (v) => v.argumentOrError()),
+                new TakeParam("status", Cardinality.ZeroOrOne, (v) => convertStatusStmt(v.argumentOrError())),
                 new TakeParam("when", Cardinality.ZeroOrOne, WhenStmt.parse),
                 new TakeParam("units", Cardinality.ZeroOrOne, (v) => v.argumentOrError()),
                 new TakeParam("config", Cardinality.ZeroOrOne, (v) => convertBoolean(v.argumentOrError())),
