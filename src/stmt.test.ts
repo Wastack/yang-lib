@@ -3,12 +3,13 @@
 import * as mocha from 'mocha';
 import * as chai from 'chai';
 import { Identifier, ParserError, UnprocessedStatement } from './unprocessed_stmt';
-import { LeafStmt, MustStmt, WhenStmt } from './stmt';
+import { LeafListStmt, LeafStmt, MustStmt, OrderedByStmt, StatusStmt, WhenStmt } from './stmt';
 
 const expect = chai.expect;
 describe(`Yang Parser`, () => {
     let good_must: UnprocessedStatement
     let good_leaf: UnprocessedStatement
+    let good_leaf_list: UnprocessedStatement
 
     beforeEach(() => {
         good_must = new UnprocessedStatement(new Identifier("must"), undefined, "2 > 4")
@@ -22,6 +23,13 @@ describe(`Yang Parser`, () => {
         good_leaf.add(new UnprocessedStatement(new Identifier("type"), undefined, "TODO"))
         good_leaf.add(new UnprocessedStatement(new Identifier("status"), undefined, "obsolete"))
         good_leaf.add(new UnprocessedStatement(new Identifier("config"), undefined, "false"))
+
+        good_leaf_list  = new UnprocessedStatement(new Identifier("leaf-list"), undefined, "leaflist")
+        good_leaf_list.add(new UnprocessedStatement(new Identifier("type"), undefined, "TODO"))
+        good_leaf_list.add(new UnprocessedStatement(new Identifier("min-elements"), undefined, "+34"))
+        good_leaf_list.add(new UnprocessedStatement(new Identifier("max-elements"), undefined, "53"))
+        good_leaf_list.add(new UnprocessedStatement(new Identifier("ordered-by"), undefined, "system"))
+        good_leaf_list.add(good_must)
     })
 
     it(`good 'must' statement`, () => {
@@ -74,6 +82,7 @@ describe(`Yang Parser`, () => {
 
     it(`good 'leaf' statement`, () => {
         let leaf = LeafStmt.parse(good_leaf)
+        // TODO type
         expect(leaf.must).to.have.lengthOf(1)
         expect(leaf.must[0].error_message).to.deep.eq("this is my error message")
         expect(leaf.identifier.content).to.eq("identifier")
@@ -81,11 +90,23 @@ describe(`Yang Parser`, () => {
         expect(leaf.mandatory).to.be.undefined
         expect(leaf.if_feature).to.have.lengthOf(2)
         expect(leaf.if_feature).to.contain("3 > 4")
+        expect(leaf.status).to.eq(StatusStmt.obsolete)
     })
 
     it(`'leaf' statement with missing 'type'`, () => {
         good_leaf.sub_statements.get("type")!.pop()
         let bad_leaf = good_leaf
         expect(() => LeafStmt.parse(bad_leaf)).to.throw(ParserError)
+    })
+
+    it(`good 'leaf-list' statement`, () => {
+        let leaf_list = LeafListStmt.parse(good_leaf_list)
+        // TODO type
+        expect(leaf_list.idenfifier.content).to.eq("leaflist")
+        expect(leaf_list.config).to.be.undefined
+
+        expect(leaf_list.min_elements).to.eq(34)
+        expect(leaf_list.max_elements).to.eq(53)
+        expect(leaf_list.ordered_by).to.eq(OrderedByStmt.system)
     })
 })
