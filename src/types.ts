@@ -13,24 +13,34 @@ export abstract class TypeStmt {
             case TypeIdentifier.BinaryType:
                 return BinaryTypeStmt.parse(unp)
             case TypeIdentifier.BitsType:
+                // TODO
                 break
             case TypeIdentifier.BooleanType:
+                // TODO
                 break
             case TypeIdentifier.Decimal64Type:
+                // TODO
                 break
             case TypeIdentifier.EmptyType:
+                // TODO
                 break
             case TypeIdentifier.EnumberationType:
+                // TODO
                 break
             case TypeIdentifier.IdentityrefType:
+                // TODO
                 break
             case TypeIdentifier.instanceIdentifierType:
+                // TODO
                 break
             case TypeIdentifier.LeafRefType:
+                // TODO
                 break
             case TypeIdentifier.StringType:
+                // TODO
                 break
             case TypeIdentifier.UnionType:
+                // TODO
                 break
             case TypeIdentifier.int8Type:
             case TypeIdentifier.Int16Type:
@@ -40,6 +50,7 @@ export abstract class TypeStmt {
             case TypeIdentifier.UInt16Type:
             case TypeIdentifier.UInt32Type:
             case TypeIdentifier.UInt64Type:
+                // TODO
                 break
             default:
                 // TODO derived type
