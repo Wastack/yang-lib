@@ -203,3 +203,36 @@ export class MustStmt {
         )
     }
 }
+
+
+export class BitStmt {
+    constructor(
+        public identifier: Identifier,
+        public if_feature: string[],
+        public description?: string,
+        public position?: number,
+        public reference?: string,
+        public status?: StatusStmt,
+    ) { }
+
+    static parse(unprocessed: UnprocessedStatement): BitStmt {
+        return new BitStmt(
+            new Identifier(unprocessed.argumentOrError()),
+            ...unprocessed.takeAll(
+                new TakeParam("if-feature", Cardinality.ZeroOrMore, (v) => v.argumentOrError()),
+                new TakeParam("description", Cardinality.ZeroOrOne, (u) => u.argumentOrError()),
+                new TakeParam("position", Cardinality.ZeroOrOne, (u) => convertPositiveNumber(u.argumentOrError())),
+                new TakeParam("reference", Cardinality.ZeroOrOne, (u) => u.argumentOrError()),
+                new TakeParam("status", Cardinality.ZeroOrOne, (v) => convertStatusStmt(v.argumentOrError())),
+            ),
+        )
+    }
+}
+
+export function convertPositiveNumber(text: string): number {
+    let num = convertNumber(text)
+    if (num < 0) {
+        throw new ParserError(`bit position ${num} must be greater or equal to 0`)
+    }
+    return num
+}

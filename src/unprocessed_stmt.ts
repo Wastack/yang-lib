@@ -152,6 +152,26 @@ export class UnprocessedStatement {
     }
 
     /**
+     * Same as `argumentOrError`, except it parses the result to:
+     * 
+     * ```
+     * <argument> = [<prefix>:]<identifier>
+     * ```
+     * 
+     * @returns a tuple of length two, where the first element is the prefix
+     * parsed from the argument and the second one is the identifier.
+     */
+    argumentAsPrefixedIdentifierOrError(): [prefix: string, identifier: Identifier] {
+        let arg = this.argumentOrError()
+        if (arg.indexOf(":") >= 0)  {
+            let split = arg.split(":", 2) as [string, string]
+            return [split[0], new Identifier(split[1])]
+        }
+
+        return ["", new Identifier(arg)]
+    }
+
+    /**
      * Takes precisely one sub-statement by the given `identifier` and `prefix`.
      * If there is more or less than one sub-statement found, then it throws
      * `ParserError`.
