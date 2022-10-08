@@ -19,8 +19,7 @@ export abstract class TypeStmt {
             case TypeIdentifier.Decimal64Type:
                 return Decimal64TypeStmt.parse(unp)
             case TypeIdentifier.EmptyType:
-                // TODO
-                break
+                return EmptyType.parse(unp)
             case TypeIdentifier.EnumberationType:
                 // TODO
                 break
@@ -115,6 +114,20 @@ function convertFractionDigits(text: string): number {
     }
 
     return num
+}
+
+export class EmptyType extends TypeStmt {
+    typeIdentifier(): string {
+        return "empty"
+    }
+
+    static parse(unp: UnprocessedStatement): EmptyType {
+        if (unp.takeArgumentOrError() != TypeIdentifier.EmptyType) {
+            throw new Error("internal: empty statement parsed with wrong identifier")
+        }
+
+        return new EmptyType()
+    }
 }
 
 export class BooleanTypeStmt extends TypeStmt {
