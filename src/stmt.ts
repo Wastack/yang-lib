@@ -1,4 +1,4 @@
-import { Cardinality, Identifier, ParserError, TakeParam, UnprocessedStatement } from "./unprocessed_stmt";
+import { Cardinality, EnsureNoSubstatements, Identifier, ParserError, TakeParam, UnprocessedStatement } from "./unprocessed_stmt";
 
 export class ModuleStmt {
     constructor(
@@ -48,17 +48,17 @@ export class LeafStmt {
         return new LeafStmt(
             new Identifier(unprocessed.takeArgumentOrError()),
             ...unprocessed.takeAll(
-                new TakeParam("if-feature", Cardinality.ZeroOrMore, (v) => v.takeArgumentOrError()),
+                new TakeParam("if-feature", Cardinality.ZeroOrMore, (v) => v.takeArgumentOrError(EnsureNoSubstatements.Set)),
                 new TakeParam("must", Cardinality.ZeroOrMore, MustStmt.parse),
                 new TakeParam("type", Cardinality.One, (v) => v),
-                new TakeParam("status", Cardinality.ZeroOrOne, (v) => convertStatusStmt(v.takeArgumentOrError())),
+                new TakeParam("status", Cardinality.ZeroOrOne, (v) => convertStatusStmt(v.takeArgumentOrError(EnsureNoSubstatements.Set))),
                 new TakeParam("when", Cardinality.ZeroOrOne, WhenStmt.parse),
-                new TakeParam("units", Cardinality.ZeroOrOne, (v) => v.takeArgumentOrError()),
-                new TakeParam("default", Cardinality.ZeroOrOne, (v) => v.takeArgumentOrError()),
-                new TakeParam("config", Cardinality.ZeroOrOne, (v) => convertBoolean(v.takeArgumentOrError())),
-                new TakeParam("mandatory", Cardinality.ZeroOrOne, (v) => convertBoolean(v.takeArgumentOrError())),
-                new TakeParam("description", Cardinality.ZeroOrOne, (u) => u.takeArgumentOrError()),
-                new TakeParam("reference", Cardinality.ZeroOrOne, (u) => u.takeArgumentOrError()),
+                new TakeParam("units", Cardinality.ZeroOrOne, (v) => v.takeArgumentOrError(EnsureNoSubstatements.Set)),
+                new TakeParam("default", Cardinality.ZeroOrOne, (v) => v.takeArgumentOrError(EnsureNoSubstatements.Set)),
+                new TakeParam("config", Cardinality.ZeroOrOne, (v) => convertBoolean(v.takeArgumentOrError(EnsureNoSubstatements.Set))),
+                new TakeParam("mandatory", Cardinality.ZeroOrOne, (v) => convertBoolean(v.takeArgumentOrError(EnsureNoSubstatements.Set))),
+                new TakeParam("description", Cardinality.ZeroOrOne, (u) => u.takeArgumentOrError(EnsureNoSubstatements.Set)),
+                new TakeParam("reference", Cardinality.ZeroOrOne, (u) => u.takeArgumentOrError(EnsureNoSubstatements.Set)),
             ),
         )
     }
@@ -88,20 +88,20 @@ export class LeafListStmt {
         return new LeafListStmt(
             new Identifier(unprocessed.takeArgumentOrError()),
             ...unprocessed.takeAll(
-                new TakeParam("if-feature", Cardinality.ZeroOrMore, (v) => v.takeArgumentOrError()),
+                new TakeParam("if-feature", Cardinality.ZeroOrMore, (v) => v.takeArgumentOrError(EnsureNoSubstatements.Set)),
                 new TakeParam("must", Cardinality.ZeroOrMore, MustStmt.parse),
-                new TakeParam("default", Cardinality.ZeroOrMore, (v) => v.takeArgumentOrError()),
+                new TakeParam("default", Cardinality.ZeroOrMore, (v) => v.takeArgumentOrError(EnsureNoSubstatements.Set)),
                 new TakeParam("type", Cardinality.One, (v) => v),
 
-                new TakeParam("ordered-by", Cardinality.ZeroOrOne, (v) => convertOrderedByStmt(v.takeArgumentOrError())),
-                new TakeParam("status", Cardinality.ZeroOrOne, (v) => convertStatusStmt(v.takeArgumentOrError())),
+                new TakeParam("ordered-by", Cardinality.ZeroOrOne, (v) => convertOrderedByStmt(v.takeArgumentOrError(EnsureNoSubstatements.Set))),
+                new TakeParam("status", Cardinality.ZeroOrOne, (v) => convertStatusStmt(v.takeArgumentOrError(EnsureNoSubstatements.Set))),
                 new TakeParam("when", Cardinality.ZeroOrOne, WhenStmt.parse),
-                new TakeParam("units", Cardinality.ZeroOrOne, (v) => v.takeArgumentOrError()),
-                new TakeParam("config", Cardinality.ZeroOrOne, (v) => convertBoolean(v.takeArgumentOrError())),
-                new TakeParam("min-elements", Cardinality.ZeroOrOne, (v) => convertInteger(v.takeArgumentOrError())),
-                new TakeParam("max-elements", Cardinality.ZeroOrOne, (v) => convertInteger(v.takeArgumentOrError())),
-                new TakeParam("description", Cardinality.ZeroOrOne, (u) => u.takeArgumentOrError()),
-                new TakeParam("reference", Cardinality.ZeroOrOne, (u) => u.takeArgumentOrError()),
+                new TakeParam("units", Cardinality.ZeroOrOne, (v) => v.takeArgumentOrError(EnsureNoSubstatements.Set)),
+                new TakeParam("config", Cardinality.ZeroOrOne, (v) => convertBoolean(v.takeArgumentOrError(EnsureNoSubstatements.Set))),
+                new TakeParam("min-elements", Cardinality.ZeroOrOne, (v) => convertInteger(v.takeArgumentOrError(EnsureNoSubstatements.Set))),
+                new TakeParam("max-elements", Cardinality.ZeroOrOne, (v) => convertInteger(v.takeArgumentOrError(EnsureNoSubstatements.Set))),
+                new TakeParam("description", Cardinality.ZeroOrOne, (u) => u.takeArgumentOrError(EnsureNoSubstatements.Set)),
+                new TakeParam("reference", Cardinality.ZeroOrOne, (u) => u.takeArgumentOrError(EnsureNoSubstatements.Set)),
             )
         )
     }
@@ -177,8 +177,8 @@ export class WhenStmt {
         return new WhenStmt(
             unprocessed.takeArgumentOrError(),
             ...unprocessed.takeAll(
-                new TakeParam("description", Cardinality.ZeroOrOne, (u) => u.takeArgumentOrError()),
-                new TakeParam("reference", Cardinality.ZeroOrOne, (u) => u.takeArgumentOrError()),
+                new TakeParam("description", Cardinality.ZeroOrOne, (u) => u.takeArgumentOrError(EnsureNoSubstatements.Set)),
+                new TakeParam("reference", Cardinality.ZeroOrOne, (u) => u.takeArgumentOrError(EnsureNoSubstatements.Set)),
             )
         )
     }
@@ -197,10 +197,10 @@ export class MustStmt {
         return new MustStmt(
             unprocessed.takeArgumentOrError(),
             ...unprocessed.takeAll(
-                new TakeParam("error-message", Cardinality.ZeroOrOne, (u) => u.takeArgumentOrError()),
-                new TakeParam("error-app-tag", Cardinality.ZeroOrOne, (u) => u.takeArgumentOrError()),
-                new TakeParam("description", Cardinality.ZeroOrOne, (u) => u.takeArgumentOrError()),
-                new TakeParam("reference", Cardinality.ZeroOrOne, (u) => u.takeArgumentOrError()),
+                new TakeParam("error-message", Cardinality.ZeroOrOne, (u) => u.takeArgumentOrError(EnsureNoSubstatements.Set)),
+                new TakeParam("error-app-tag", Cardinality.ZeroOrOne, (u) => u.takeArgumentOrError(EnsureNoSubstatements.Set)),
+                new TakeParam("description", Cardinality.ZeroOrOne, (u) => u.takeArgumentOrError(EnsureNoSubstatements.Set)),
+                new TakeParam("reference", Cardinality.ZeroOrOne, (u) => u.takeArgumentOrError(EnsureNoSubstatements.Set)),
             )
         )
     }
@@ -221,11 +221,11 @@ export class BitStmt {
         return new BitStmt(
             new Identifier(unprocessed.takeArgumentOrError()),
             ...unprocessed.takeAll(
-                new TakeParam("if-feature", Cardinality.ZeroOrMore, (v) => v.takeArgumentOrError()),
-                new TakeParam("description", Cardinality.ZeroOrOne, (u) => u.takeArgumentOrError()),
-                new TakeParam("position", Cardinality.ZeroOrOne, (u) => convertPositiveInteger(u.takeArgumentOrError())),
-                new TakeParam("reference", Cardinality.ZeroOrOne, (u) => u.takeArgumentOrError()),
-                new TakeParam("status", Cardinality.ZeroOrOne, (v) => convertStatusStmt(v.takeArgumentOrError())),
+                new TakeParam("if-feature", Cardinality.ZeroOrMore, (v) => v.takeArgumentOrError(EnsureNoSubstatements.Set)),
+                new TakeParam("description", Cardinality.ZeroOrOne, (u) => u.takeArgumentOrError(EnsureNoSubstatements.Set)),
+                new TakeParam("position", Cardinality.ZeroOrOne, (u) => convertPositiveInteger(u.takeArgumentOrError(EnsureNoSubstatements.Set))),
+                new TakeParam("reference", Cardinality.ZeroOrOne, (u) => u.takeArgumentOrError(EnsureNoSubstatements.Set)),
+                new TakeParam("status", Cardinality.ZeroOrOne, (v) => convertStatusStmt(v.takeArgumentOrError(EnsureNoSubstatements.Set))),
             ),
         )
     }

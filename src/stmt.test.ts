@@ -29,6 +29,7 @@ describe(`Yang Parser`, () => {
         good_leaf_list.add(new UnprocessedStatement(new Identifier("min-elements"), undefined, "+34"))
         good_leaf_list.add(new UnprocessedStatement(new Identifier("max-elements"), undefined, "53"))
         good_leaf_list.add(new UnprocessedStatement(new Identifier("ordered-by"), undefined, "system"))
+        good_leaf_list.add(new UnprocessedStatement(new Identifier("description"), undefined, "good stuff"))
         good_leaf_list.add(good_must)
     })
 
@@ -108,6 +109,13 @@ describe(`Yang Parser`, () => {
         expect(leaf_list.min_elements).to.eq(34)
         expect(leaf_list.max_elements).to.eq(53)
         expect(leaf_list.ordered_by).to.eq(OrderedByStmt.system)
+    })
+
+    it(`description of 'leaf-list' has a funny sub-statement`, () => {
+        let bad_leaf_list = good_leaf_list
+        let desc = bad_leaf_list.sub_statements.get("description")![0]
+        desc.add(new UnprocessedStatement(new Identifier("module"), undefined, "unexpected"))
+        expect(() => LeafListStmt.parse(bad_leaf_list)).to.throw(ParserError)
     })
 
     it(`'leaf-list' 'type' has prefix, wrongfully`, () => {
