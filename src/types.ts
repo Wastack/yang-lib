@@ -1,10 +1,9 @@
 import { convertPositiveNumber } from "./stmt";
-import { Cardinality, ParserError, TakeParam, UnprocessedStatement } from "./unprocessed_stmt";
+import { Cardinality, Identifier, ParserError, TakeParam, UnprocessedStatement } from "./unprocessed_stmt";
 
 export abstract class TypeStmt {
     abstract typeIdentifier(): string;
 
-    // TODO remove unknown
     static parseTypeStmt(unp: UnprocessedStatement): TypeStmt | unknown{
         let arg = unp.argumentOrError() as TypeIdentifier
         // NOTE: if there is a prefix, it will go to the default branch, which
@@ -13,8 +12,7 @@ export abstract class TypeStmt {
             case TypeIdentifier.BinaryType:
                 return BinaryTypeStmt.parse(unp)
             case TypeIdentifier.BitsType:
-                // TODO
-                break
+                return BitTypeStmt.parse(unp)
             case TypeIdentifier.BooleanType:
                 // TODO
                 break
@@ -81,6 +79,50 @@ export enum TypeIdentifier {
     UInt32Type = "uint32",
     UInt64Type = "uint64",
     UnionType = "union",
+}
+
+export class BitTypeStmt extends TypeStmt {
+    typeIdentifier(): string {
+        return "bits"
+    }
+
+    constructor(
+        public bit: BitStmt[]
+    ) {
+        super();
+    }
+
+    static parse(unp: UnprocessedStatement): BitTypeStmt {
+        if (unp.argumentOrError() != TypeIdentifier.BitsType) {
+            throw new Error("internal: bits statement parsed with wrong identifier")
+        }
+
+        return new BitTypeStmt(
+            ...unp.takeAll(
+                new TakeParam("bit", Cardinality.ZeroOrMore, BitStmt.parse),
+            ),
+        )
+    }
+}
+
+export class BitStmt {
+    constructor(
+        public name: Identifier,
+        public position?: number,
+    ) {
+        if (this.position !== undefined && this.position < 0) {
+            throw new ParserError("negative bit position is invalid")
+        }
+    }
+
+    static parse(unp: UnprocessedStatement): BitStmt {
+        return new BitStmt(
+            new Identifier(unp.argumentOrError()),
+            ...unp.takeAll(
+                new TakeParam("position", Cardinality.ZeroOrOne, (u) => convertPositiveNumber(u.argumentOrError()))
+            ),
+        )
+    }
 }
 
 export class BinaryTypeStmt extends TypeStmt {
