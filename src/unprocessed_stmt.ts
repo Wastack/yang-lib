@@ -134,16 +134,35 @@ export class UnprocessedStatement {
     }
 
     /**
+     * Look at the argument of the unprocessed statement, without mutating
+     * `this`. It throws `ParserError` if argument is missing.
+     * 
+     * @returns argument of statement
+     */
+    peekArgumentOrError(): string | undefined {
+        if (!this.argument) {
+            throw new ParserError("argument is mandatory for " + this.identifier)
+        }
+
+        return this.argument
+    }
+
+    /**
      * Takes the argument from the statement if exists (not undefined, nor
      * empty). Otherwise, throw a `ParserError`.
      * 
      * After calling this method, argument is deleted from the statement.
      * 
+     * If `ensure_no_substatements` is set and there is one or more
+     * sub-statements stored in `this`, the method throws `ParserError`.
+     * 
      * @returns argument of the statement.
      */
-    argumentOrError(): string {
+    takeArgumentOrError(ensure_no_substatements?: EnsureNoSubstatements): string {
         if (!this.argument) {
             throw new ParserError("argument is mandatory for " + this.identifier)
+        } else if (ensure_no_substatements !== undefined && this.sub_statements.size > 0) {
+            throw new ParserError(`statement is expected not to have sub-statements`)
         }
 
         let arg = this.argument
@@ -162,7 +181,7 @@ export class UnprocessedStatement {
      * parsed from the argument and the second one is the identifier.
      */
     argumentAsPrefixedIdentifierOrError(): [prefix: string, identifier: Identifier] {
-        let arg = this.argumentOrError()
+        let arg = this.takeArgumentOrError()
         if (arg.indexOf(":") >= 0)  {
             let split = arg.split(":", 2) as [string, string]
             return [split[0], new Identifier(split[1])]
@@ -331,4 +350,8 @@ export class TakeParam<T, C extends Cardinality> {
         public parseFunc: (s: UnprocessedStatement) => T,
         public prefix?: string,
     ) { }
+}
+
+export enum EnsureNoSubstatements {
+    Set
 }

@@ -1,11 +1,12 @@
-import { convertPositiveNumber } from "./stmt";
-import { Cardinality, Identifier, ParserError, TakeParam, UnprocessedStatement } from "./unprocessed_stmt";
+import { convertPositiveInteger } from "./stmt";
+import { Cardinality, EnsureNoSubstatements, Identifier, ParserError, TakeParam, UnprocessedStatement } from "./unprocessed_stmt";
 
 export abstract class TypeStmt {
     abstract typeIdentifier(): string;
 
     static parseTypeStmt(unp: UnprocessedStatement): TypeStmt | unknown{
-        let arg = unp.argumentOrError() as TypeIdentifier
+        let arg = unp.peekArgumentOrError() as TypeIdentifier
+
         // NOTE: if there is a prefix, it will go to the default branch, which
         // is good
         switch (arg) {
@@ -14,11 +15,9 @@ export abstract class TypeStmt {
             case TypeIdentifier.BitsType:
                 return BitTypeStmt.parse(unp)
             case TypeIdentifier.BooleanType:
-                // TODO
-                break
+                return BooleanTypeStmt.parse(unp)
             case TypeIdentifier.Decimal64Type:
-                // TODO
-                break
+                return Decimal64TypeStmt.parse(unp)
             case TypeIdentifier.EmptyType:
                 // TODO
                 break
@@ -81,6 +80,57 @@ export enum TypeIdentifier {
     UnionType = "union",
 }
 
+export class Decimal64TypeStmt extends TypeStmt {
+    typeIdentifier(): string {
+        return "decimal64"
+    }
+
+    constructor(
+        public fraction_digits: number,
+        public range?: LengthRestriction,
+    ) {
+        super();
+    }
+
+    static parse(unp: UnprocessedStatement): Decimal64TypeStmt {
+        if (unp.takeArgumentOrError() != TypeIdentifier.Decimal64Type) {
+            throw new Error("internal: decimal64 statement parsed with wrong identifier")
+        }
+
+        return new Decimal64TypeStmt(
+            ...unp.takeAll(
+                new TakeParam("fraction-digits", Cardinality.One, (u) => convertFractionDigits(
+                    u.takeArgumentOrError(EnsureNoSubstatements.Set))),
+                new TakeParam("range", Cardinality.ZeroOrOne, (u) => new LengthRestriction(
+                    u.takeArgumentOrError(EnsureNoSubstatements.Set))),
+            )
+        )
+    }
+}
+
+function convertFractionDigits(text: string): number {
+    let num = convertPositiveInteger(text)
+    if (num < 1 || num > 18) {
+        throw new ParserError(`fraction digits must be between 1 and 18 (inclusive), but found '${num}'`)
+    }
+
+    return num
+}
+
+export class BooleanTypeStmt extends TypeStmt {
+    typeIdentifier(): string {
+        return "boolean"
+    }
+
+    static parse(unp: UnprocessedStatement): BooleanTypeStmt {
+        if (unp.takeArgumentOrError() != TypeIdentifier.BooleanType) {
+            throw new Error("internal: boolean statement parsed with wrong identifier")
+        }
+
+        return new BooleanTypeStmt()
+    }
+}
+
 export class BitTypeStmt extends TypeStmt {
     typeIdentifier(): string {
         return "bits"
@@ -93,7 +143,7 @@ export class BitTypeStmt extends TypeStmt {
     }
 
     static parse(unp: UnprocessedStatement): BitTypeStmt {
-        if (unp.argumentOrError() != TypeIdentifier.BitsType) {
+        if (unp.takeArgumentOrError() != TypeIdentifier.BitsType) {
             throw new Error("internal: bits statement parsed with wrong identifier")
         }
 
@@ -117,9 +167,9 @@ export class BitStmt {
 
     static parse(unp: UnprocessedStatement): BitStmt {
         return new BitStmt(
-            new Identifier(unp.argumentOrError()),
+            new Identifier(unp.takeArgumentOrError()),
             ...unp.takeAll(
-                new TakeParam("position", Cardinality.ZeroOrOne, (u) => convertPositiveNumber(u.argumentOrError()))
+                new TakeParam("position", Cardinality.ZeroOrOne, (u) => convertPositiveInteger(u.takeArgumentOrError()))
             ),
         )
     }
@@ -137,7 +187,7 @@ export class BinaryTypeStmt extends TypeStmt {
     }
 
     static parse(unp: UnprocessedStatement): BinaryTypeStmt {
-        if (unp.argumentOrError() != TypeIdentifier.BinaryType) {
+        if (unp.takeArgumentOrError() != TypeIdentifier.BinaryType) {
             throw new Error("internal: binary statement parsed with wrong identifier")
         }
 
@@ -161,12 +211,12 @@ export class LengthStmt {
 
     static parse(unp: UnprocessedStatement): LengthStmt {
         return new LengthStmt(
-            new LengthRestriction(unp.argumentOrError()),
+            new LengthRestriction(unp.takeArgumentOrError()),
             ...unp.takeAll(
-                new TakeParam("error-message", Cardinality.ZeroOrOne, (u) => u.argumentOrError()),
-                new TakeParam("error-app-tag", Cardinality.ZeroOrOne, (u) => u.argumentOrError()),
-                new TakeParam("description", Cardinality.ZeroOrOne, (u) => u.argumentOrError()),
-                new TakeParam("reference", Cardinality.ZeroOrOne, (u) => u.argumentOrError()),
+                new TakeParam("error-message", Cardinality.ZeroOrOne, (u) => u.takeArgumentOrError()),
+                new TakeParam("error-app-tag", Cardinality.ZeroOrOne, (u) => u.takeArgumentOrError()),
+                new TakeParam("description", Cardinality.ZeroOrOne, (u) => u.takeArgumentOrError()),
+                new TakeParam("reference", Cardinality.ZeroOrOne, (u) => u.takeArgumentOrError()),
             )
         )
     }
@@ -194,12 +244,12 @@ export class LengthRange {
 
         let bounds = text.split("..", 2)
         if (bounds.length == 1) {
-            let num = convertPositiveNumber(text)
+            let num = convertPositiveInteger(text)
             this.lower_bound = num
             this.upper_bound = num
         } else {
-            this.lower_bound = convertPositiveNumber(bounds[0].trim())
-            this.upper_bound = convertPositiveNumber(bounds[1].trim())
+            this.lower_bound = convertPositiveInteger(bounds[0].trim())
+            this.upper_bound = convertPositiveInteger(bounds[1].trim())
         }
     }
 }

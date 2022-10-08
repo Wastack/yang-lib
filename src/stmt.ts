@@ -12,7 +12,7 @@ export class ModuleStmt {
 
     static parse(unprocessed: UnprocessedStatement): ModuleStmt {
         return new ModuleStmt(
-            new Identifier(unprocessed.argumentOrError()),
+            new Identifier(unprocessed.takeArgumentOrError()),
             ...unprocessed.takeAll(
                 new TakeParam("module-header", Cardinality.One, (v) => v),
                 new TakeParam("linkage", Cardinality.One, (v) => v),
@@ -46,19 +46,19 @@ export class LeafStmt {
 
     static parse(unprocessed: UnprocessedStatement): LeafStmt {
         return new LeafStmt(
-            new Identifier(unprocessed.argumentOrError()),
+            new Identifier(unprocessed.takeArgumentOrError()),
             ...unprocessed.takeAll(
-                new TakeParam("if-feature", Cardinality.ZeroOrMore, (v) => v.argumentOrError()),
+                new TakeParam("if-feature", Cardinality.ZeroOrMore, (v) => v.takeArgumentOrError()),
                 new TakeParam("must", Cardinality.ZeroOrMore, MustStmt.parse),
                 new TakeParam("type", Cardinality.One, (v) => v),
-                new TakeParam("status", Cardinality.ZeroOrOne, (v) => convertStatusStmt(v.argumentOrError())),
+                new TakeParam("status", Cardinality.ZeroOrOne, (v) => convertStatusStmt(v.takeArgumentOrError())),
                 new TakeParam("when", Cardinality.ZeroOrOne, WhenStmt.parse),
-                new TakeParam("units", Cardinality.ZeroOrOne, (v) => v.argumentOrError()),
-                new TakeParam("default", Cardinality.ZeroOrOne, (v) => v.argumentOrError()),
-                new TakeParam("config", Cardinality.ZeroOrOne, (v) => convertBoolean(v.argumentOrError())),
-                new TakeParam("mandatory", Cardinality.ZeroOrOne, (v) => convertBoolean(v.argumentOrError())),
-                new TakeParam("description", Cardinality.ZeroOrOne, (u) => u.argumentOrError()),
-                new TakeParam("reference", Cardinality.ZeroOrOne, (u) => u.argumentOrError()),
+                new TakeParam("units", Cardinality.ZeroOrOne, (v) => v.takeArgumentOrError()),
+                new TakeParam("default", Cardinality.ZeroOrOne, (v) => v.takeArgumentOrError()),
+                new TakeParam("config", Cardinality.ZeroOrOne, (v) => convertBoolean(v.takeArgumentOrError())),
+                new TakeParam("mandatory", Cardinality.ZeroOrOne, (v) => convertBoolean(v.takeArgumentOrError())),
+                new TakeParam("description", Cardinality.ZeroOrOne, (u) => u.takeArgumentOrError()),
+                new TakeParam("reference", Cardinality.ZeroOrOne, (u) => u.takeArgumentOrError()),
             ),
         )
     }
@@ -86,31 +86,33 @@ export class LeafListStmt {
 
     static parse(unprocessed: UnprocessedStatement): LeafListStmt {
         return new LeafListStmt(
-            new Identifier(unprocessed.argumentOrError()),
+            new Identifier(unprocessed.takeArgumentOrError()),
             ...unprocessed.takeAll(
-                new TakeParam("if-feature", Cardinality.ZeroOrMore, (v) => v.argumentOrError()),
+                new TakeParam("if-feature", Cardinality.ZeroOrMore, (v) => v.takeArgumentOrError()),
                 new TakeParam("must", Cardinality.ZeroOrMore, MustStmt.parse),
-                new TakeParam("default", Cardinality.ZeroOrMore, (v) => v.argumentOrError()),
+                new TakeParam("default", Cardinality.ZeroOrMore, (v) => v.takeArgumentOrError()),
                 new TakeParam("type", Cardinality.One, (v) => v),
 
-                new TakeParam("ordered-by", Cardinality.ZeroOrOne, (v) => convertOrderedByStmt(v.argumentOrError())),
-                new TakeParam("status", Cardinality.ZeroOrOne, (v) => convertStatusStmt(v.argumentOrError())),
+                new TakeParam("ordered-by", Cardinality.ZeroOrOne, (v) => convertOrderedByStmt(v.takeArgumentOrError())),
+                new TakeParam("status", Cardinality.ZeroOrOne, (v) => convertStatusStmt(v.takeArgumentOrError())),
                 new TakeParam("when", Cardinality.ZeroOrOne, WhenStmt.parse),
-                new TakeParam("units", Cardinality.ZeroOrOne, (v) => v.argumentOrError()),
-                new TakeParam("config", Cardinality.ZeroOrOne, (v) => convertBoolean(v.argumentOrError())),
-                new TakeParam("min-elements", Cardinality.ZeroOrOne, (v) => convertNumber(v.argumentOrError())),
-                new TakeParam("max-elements", Cardinality.ZeroOrOne, (v) => convertNumber(v.argumentOrError())),
-                new TakeParam("description", Cardinality.ZeroOrOne, (u) => u.argumentOrError()),
-                new TakeParam("reference", Cardinality.ZeroOrOne, (u) => u.argumentOrError()),
+                new TakeParam("units", Cardinality.ZeroOrOne, (v) => v.takeArgumentOrError()),
+                new TakeParam("config", Cardinality.ZeroOrOne, (v) => convertBoolean(v.takeArgumentOrError())),
+                new TakeParam("min-elements", Cardinality.ZeroOrOne, (v) => convertInteger(v.takeArgumentOrError())),
+                new TakeParam("max-elements", Cardinality.ZeroOrOne, (v) => convertInteger(v.takeArgumentOrError())),
+                new TakeParam("description", Cardinality.ZeroOrOne, (u) => u.takeArgumentOrError()),
+                new TakeParam("reference", Cardinality.ZeroOrOne, (u) => u.takeArgumentOrError()),
             )
         )
     }
 }
 
-function convertNumber(text: string): number {
+function convertInteger(text: string): number {
     let num = +text
     if (Number.isNaN(num)) {
         throw new ParserError(`expected the string token '${text}' to be a number`)
+    } else if (!Number.isInteger(num)) {
+        throw new ParserError(`expected intger but found ${text}`)
     }
 
     return num
@@ -173,10 +175,10 @@ export class WhenStmt {
 
     static parse(unprocessed: UnprocessedStatement): WhenStmt {
         return new WhenStmt(
-            unprocessed.argumentOrError(),
+            unprocessed.takeArgumentOrError(),
             ...unprocessed.takeAll(
-                new TakeParam("description", Cardinality.ZeroOrOne, (u) => u.argumentOrError()),
-                new TakeParam("reference", Cardinality.ZeroOrOne, (u) => u.argumentOrError()),
+                new TakeParam("description", Cardinality.ZeroOrOne, (u) => u.takeArgumentOrError()),
+                new TakeParam("reference", Cardinality.ZeroOrOne, (u) => u.takeArgumentOrError()),
             )
         )
     }
@@ -193,12 +195,12 @@ export class MustStmt {
 
     static parse(unprocessed: UnprocessedStatement): MustStmt {
         return new MustStmt(
-            unprocessed.argumentOrError(),
+            unprocessed.takeArgumentOrError(),
             ...unprocessed.takeAll(
-                new TakeParam("error-message", Cardinality.ZeroOrOne, (u) => u.argumentOrError()),
-                new TakeParam("error-app-tag", Cardinality.ZeroOrOne, (u) => u.argumentOrError()),
-                new TakeParam("description", Cardinality.ZeroOrOne, (u) => u.argumentOrError()),
-                new TakeParam("reference", Cardinality.ZeroOrOne, (u) => u.argumentOrError()),
+                new TakeParam("error-message", Cardinality.ZeroOrOne, (u) => u.takeArgumentOrError()),
+                new TakeParam("error-app-tag", Cardinality.ZeroOrOne, (u) => u.takeArgumentOrError()),
+                new TakeParam("description", Cardinality.ZeroOrOne, (u) => u.takeArgumentOrError()),
+                new TakeParam("reference", Cardinality.ZeroOrOne, (u) => u.takeArgumentOrError()),
             )
         )
     }
@@ -217,20 +219,20 @@ export class BitStmt {
 
     static parse(unprocessed: UnprocessedStatement): BitStmt {
         return new BitStmt(
-            new Identifier(unprocessed.argumentOrError()),
+            new Identifier(unprocessed.takeArgumentOrError()),
             ...unprocessed.takeAll(
-                new TakeParam("if-feature", Cardinality.ZeroOrMore, (v) => v.argumentOrError()),
-                new TakeParam("description", Cardinality.ZeroOrOne, (u) => u.argumentOrError()),
-                new TakeParam("position", Cardinality.ZeroOrOne, (u) => convertPositiveNumber(u.argumentOrError())),
-                new TakeParam("reference", Cardinality.ZeroOrOne, (u) => u.argumentOrError()),
-                new TakeParam("status", Cardinality.ZeroOrOne, (v) => convertStatusStmt(v.argumentOrError())),
+                new TakeParam("if-feature", Cardinality.ZeroOrMore, (v) => v.takeArgumentOrError()),
+                new TakeParam("description", Cardinality.ZeroOrOne, (u) => u.takeArgumentOrError()),
+                new TakeParam("position", Cardinality.ZeroOrOne, (u) => convertPositiveInteger(u.takeArgumentOrError())),
+                new TakeParam("reference", Cardinality.ZeroOrOne, (u) => u.takeArgumentOrError()),
+                new TakeParam("status", Cardinality.ZeroOrOne, (v) => convertStatusStmt(v.takeArgumentOrError())),
             ),
         )
     }
 }
 
-export function convertPositiveNumber(text: string): number {
-    let num = convertNumber(text)
+export function convertPositiveInteger(text: string): number {
+    let num = convertInteger(text)
     if (num < 0) {
         throw new ParserError(`bit position ${num} must be greater or equal to 0`)
     }
