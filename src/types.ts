@@ -23,9 +23,8 @@ export abstract class TypeStmt {
             case TypeIdentifier.EnumberationType:
                 return EnumerationTypeStmt.parse
             case TypeIdentifier.IdentityrefType:
-                // TODO
-                break
-            case TypeIdentifier.instanceIdentifierType:
+                return IdentityrefTypeStmt.parse
+            case TypeIdentifier.InstanceIdentifierType:
                 // TODO
                 break
             case TypeIdentifier.LeafRefType:
@@ -37,7 +36,7 @@ export abstract class TypeStmt {
             case TypeIdentifier.UnionType:
                 // TODO
                 break
-            case TypeIdentifier.int8Type:
+            case TypeIdentifier.Int8Type:
             case TypeIdentifier.Int16Type:
             case TypeIdentifier.Int32Type:
             case TypeIdentifier.Int64Type:
@@ -64,8 +63,8 @@ export enum TypeIdentifier {
     EmptyType = "empty",
     EnumberationType = "enumeration",
     IdentityrefType = "identityref",
-    instanceIdentifierType = "instance-identifier",
-    int8Type = "int8",
+    InstanceIdentifierType = "instance-identifier",
+    Int8Type = "int8",
     Int16Type = "int16",
     Int32Type = "int32",
     Int64Type = "int64",
@@ -76,6 +75,38 @@ export enum TypeIdentifier {
     UInt32Type = "uint32",
     UInt64Type = "uint64",
     UnionType = "union",
+}
+
+export class IdentityrefTypeStmt extends TypeStmt {
+    typeIdentifier(): string {
+        throw new Error("Method not implemented.");
+    }
+
+    constructor(
+        public base: Identityref[]
+    ) {
+        super();
+    }
+
+    static parse(unp: UnprocessedStatement): IdentityrefTypeStmt {
+        if (unp.takeArgumentOrError() != TypeIdentifier.IdentityrefType) {
+            throw new Error("internal: identityref statement parsed with wrong identifier")
+        }
+
+        return new IdentityrefTypeStmt(
+            ...unp.takeAll(
+                new TakeParam("base", Cardinality.More, (u) => new Identityref(...u.argumentAsPrefixedIdentifierOrError()))
+            )
+        )
+    }
+}
+
+export class Identityref {
+
+    constructor(
+        public prefix: string,
+        public identifier: Identifier,
+    ) {}
 }
 
 export class EnumerationTypeStmt extends TypeStmt {
