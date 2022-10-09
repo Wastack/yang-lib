@@ -1,4 +1,4 @@
-import { convertPositiveInteger } from "./stmt";
+import { convertInteger, convertPositiveInteger, convertStatusStmt, StatusStmt } from "./stmt";
 import { Cardinality, EnsureNoSubstatements, Identifier, ParserError, TakeParam, UnprocessedStatement } from "./unprocessed_stmt";
 
 export abstract class TypeStmt {
@@ -19,10 +19,9 @@ export abstract class TypeStmt {
             case TypeIdentifier.Decimal64Type:
                 return Decimal64TypeStmt.parse(unp)
             case TypeIdentifier.EmptyType:
-                return EmptyType.parse(unp)
+                return EmptyTypeStmt.parse(unp)
             case TypeIdentifier.EnumberationType:
-                // TODO
-                break
+                return EnumerationTypeStmt.parse
             case TypeIdentifier.IdentityrefType:
                 // TODO
                 break
@@ -79,6 +78,83 @@ export enum TypeIdentifier {
     UnionType = "union",
 }
 
+export class EnumerationTypeStmt extends TypeStmt {
+    typeIdentifier(): string {
+        return "enumeration"
+    }
+
+    constructor(
+        public enum_: EnumStmt,
+    ) {
+        super();
+    }
+
+    static parse(unp: UnprocessedStatement): EnumerationTypeStmt {
+        if (unp.takeArgumentOrError() != TypeIdentifier.EnumberationType) {
+            throw new Error("internal: enumeration statement parsed with wrong identifier")
+        }
+
+        return new EnumerationTypeStmt(
+            ...unp.takeAll(
+                new TakeParam("enum", Cardinality.ZeroOrMore, EnumStmt.parse)
+            )
+        )
+    }
+}
+
+export class EnumStmt {
+    constructor(
+        public name: string,
+
+        public if_feature: string[],
+        public description?: string,
+        public reference?: string,
+        public status?: StatusStmt,
+        public value?: number,
+    ) {}
+
+    static parse(unp: UnprocessedStatement) {
+        return new EnumStmt(
+            this.validateEnumName(unp.takeArgumentOrError()),
+            ...unp.takeAll(
+                new TakeParam("if-feature", Cardinality.ZeroOrMore, (v) => v.takeArgumentOrError(EnsureNoSubstatements.Set)),
+                new TakeParam("description", Cardinality.ZeroOrOne, (u) => u.takeArgumentOrError(EnsureNoSubstatements.Set)),
+                new TakeParam("reference", Cardinality.ZeroOrOne, (u) => u.takeArgumentOrError(EnsureNoSubstatements.Set)),
+                new TakeParam("status", Cardinality.ZeroOrOne, (v) => convertStatusStmt(v.takeArgumentOrError(EnsureNoSubstatements.Set))),
+                new TakeParam("value", Cardinality.ZeroOrOne, (u) => EnumStmt.convertValue(u.takeArgumentOrError(EnsureNoSubstatements.Set))),
+            ),
+        )
+    }
+
+    /**
+     * RFC9.6.4: The string MUST NOT be zero-length and MUST NOT have any
+     * leading or trailing whitespace characters (any Unicode character with the
+     * "White_Space" property).  The use of Unicode control codes SHOULD be
+     * avoided.
+     * 
+     * @param text the soon to be enum name
+     * @returns the soon to be enum name
+     */
+    static validateEnumName(text: string): string {
+        if (!text) {
+            throw new ParserError(`enum name must not be zero-length`)
+        } else if (text.trim().length != text.length) {
+            throw new ParserError(`enum name must not have leading or traliing whitespace character: '${text}'`)
+        }
+
+        return text
+    }
+
+    static convertValue(text: string): number {
+        let num = convertInteger(text)
+        if (num < -2147483648 || num > 2147483647) {
+            throw new ParserError(`enum value must be between range -2147483648 to 2147483647, biut it was: '${text}'`)
+        }
+
+        return num
+    }
+}
+
 export class Decimal64TypeStmt extends TypeStmt {
     typeIdentifier(): string {
         return "decimal64"
@@ -116,17 +192,17 @@ function convertFractionDigits(text: string): number {
     return num
 }
 
-export class EmptyType extends TypeStmt {
+export class EmptyTypeStmt extends TypeStmt {
     typeIdentifier(): string {
         return "empty"
     }
 
-    static parse(unp: UnprocessedStatement): EmptyType {
+    static parse(unp: UnprocessedStatement): EmptyTypeStmt {
         if (unp.takeArgumentOrError() != TypeIdentifier.EmptyType) {
             throw new Error("internal: empty statement parsed with wrong identifier")
         }
 
-        return new EmptyType()
+        return new EmptyTypeStmt()
     }
 }
 

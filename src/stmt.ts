@@ -107,7 +107,7 @@ export class LeafListStmt {
     }
 }
 
-function convertInteger(text: string): number {
+export function convertInteger(text: string): number {
     let num = +text
     if (Number.isNaN(num)) {
         throw new ParserError(`expected the string token '${text}' to be a number`)
@@ -152,7 +152,7 @@ export enum StatusStmt {
     obsolete = "obsolete"
 }
 
-function convertStatusStmt(text?: string): StatusStmt {
+export function convertStatusStmt(text?: string): StatusStmt {
     if (text == undefined) {
         return StatusStmt.current
     }
